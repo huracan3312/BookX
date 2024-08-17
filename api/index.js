@@ -8,7 +8,7 @@ const Place = require('./models/Place.js');
 const Booking = require('./models/Booking.js');
 const cookieParser = require('cookie-parser');
 const imageDownloader = require('image-downloader');
-const {S3Client, PutObjectCommand} = require('@aws-sdk/client-s3');
+const {S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const multer = require('multer');
 const fs = require('fs');
 const mime = require('mime-types');
@@ -18,7 +18,8 @@ const app = express();
 
 const bcryptSalt = bcrypt.genSaltSync(10);
 const jwtSecret = 'fasefraw4r5r3wq45wdfgw34twdfg';
-const bucket = 'dawid-booking-app';
+const bucket = process.env.S3_BUCKET;
+const region =  process.env.S3_REGION
 
 app.use(express.json());
 app.use(cookieParser());
@@ -28,15 +29,16 @@ app.use(cors({
   origin: 'http://localhost:5173',
   optionSuccessStatus:200
 }));
+const client = new S3Client({
+  region: process.env.S3_REGION,
+  endpoint: process.env.S3_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.S3_ACCESS_KEY,
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+  },
+});
 
 async function uploadToS3(path, originalFilename, mimetype) {
-  const client = new S3Client({
-    region: 'us-east-1',
-    credentials: {
-      accessKeyId: process.env.S3_ACCESS_KEY,
-      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
-    },
-  });
   const parts = originalFilename.split('.');
   const ext = parts[parts.length - 1];
   const newFilename = Date.now() + '.' + ext;
@@ -47,7 +49,7 @@ async function uploadToS3(path, originalFilename, mimetype) {
     ContentType: mimetype,
     ACL: 'public-read',
   }));
-  return `https://${bucket}.s3.amazonaws.com/${newFilename}`;
+  return `https://${bucket}.s3.${region}.amazonaws.com/RoomImages/${newFilename}`;
 }
 
 function getUserDataFromReq(req) {
@@ -143,6 +145,33 @@ app.post('/api/upload', photosMiddleware.array('photos', 100), async (req,res) =
   res.json(uploadedFiles);
 });
 
+async function deletePhotoFromS3(filename) {
+  try {
+    const url = new URL(filename);
+    const key = url.pathname.substring(1);
+    const name = key.split('/').pop();
+    console.log(name)
+    const command = new DeleteObjectCommand({
+      Bucket: bucket,
+      Key: name,
+    });
+    await client.send(command);
+    console.log(`Successfully deleted ${filename} from S3.`);
+  } catch (error) {
+    console.error('Error deleting file from S3:', error);
+    throw error;
+  }
+}
+
+app.delete('/api/delete-photo', async (req, res) => {
+  try {
+      const response = await deletePhotoFromS3(req.body.filename);
+      res.status(200).send({ message: 'Foto eliminada correctamente' });
+  } catch (error) {
+      res.status(500).send({ error: 'Error al eliminar la foto' });
+  }
+});
+
 app.post('/api/places', (req,res) => {
   mongoose.connect(process.env.MONGO_URL);
   const {token} = req.cookies;
@@ -212,7 +241,6 @@ app.delete('/api/places/:id', async (req, res) => {
       res.status(404).json({ error: 'Place not found' });
     }
   } catch (error) {
-    console.error('Error deleting place:', error);
     res.status(500).json({ error: 'Error deleting place' });
   }
 });
@@ -256,7 +284,6 @@ app.get('/api/bookings', async (req, res) => {
 
     res.json(bookings);
   } catch (error) {
-    console.error('Error fetching bookings:', error);
     res.status(500).json({ error: 'Error fetching bookings' });
   }
 });
