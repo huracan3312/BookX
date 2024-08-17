@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useContext, useEffect, useState } from "react";
+import { differenceInCalendarDays } from "date-fns";
+import axios from "axios";
+import { Navigate } from "react-router-dom";
+import { UserContext } from "./UserContext.jsx";
 
 export default function BookingWidget({ place }) {
   const [checkIn, setCheckIn] = useState(null);
@@ -9,6 +14,13 @@ export default function BookingWidget({ place }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [redirect, setRedirect] = useState('');
+  const { user } = useContext(UserContext);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name);
+    }
+  }, [user]);
 
   let numberOfNights = 0;
   if (checkIn && checkOut) {
@@ -31,11 +43,50 @@ export default function BookingWidget({ place }) {
     });
     const bookingId = await response.json();
     setRedirect(`/account/bookings/${bookingId}`);
+    if (!name || !phone) {
+      alert("Please fill out your name and phone number.");
+      return;
+    }
+  
+    try {
+      // Solicita solo las reservas relevantes al backend
+      const response = await axios.get('/bookings', {
+        params: {
+          place: place._id.toString(),
+          checkIn: checkIn.toString(),
+          checkOut: checkOut.toString()
+        }
+      });
+  
+      const bookings = response.data;
+  
+      // Verificar disponibilidad (ahora solo reserva las fechas relevantes)
+      if (bookings.length === 0) {
+        if (numberOfGuests <= place.maxGuests) {
+          const bookingResponse = await axios.post('/bookings', {
+            checkIn, checkOut, numberOfGuests, name, phone,
+            place: place._id,
+            price: numberOfNights * place.price,
+          });
+  
+          const bookingId = bookingResponse.data._id;
+          setRedirect(`/account/bookings/${bookingId}`);
+        } else {
+          alert("The number of guests exceeds the maximum of the room");
+        }
+      } else {
+        alert("The room isn't available in the selected dates");
+      }
+    } catch (error) {
+      console.error('Error fetching or creating booking:', error);
+      alert('An error occurred while processing your booking.');
+    }
   }
-
+  
   if (redirect) {
     return <Navigate to={redirect} />;
   }
+  
 
   return (
     <div className="bg-white shadow p-4 rounded-2xl">
@@ -60,6 +111,9 @@ export default function BookingWidget({ place }) {
               className="form-input"
               placeholderText="Select check-in date"
             />
+            <input type="date"
+              value={checkIn}
+              onChange={ev => setCheckIn(ev.target.value)} />
           </div>
           <div className="py-3 px-4 flex-1">
             <label>Check out:</label>
@@ -73,6 +127,8 @@ export default function BookingWidget({ place }) {
               className="form-input"
               placeholderText="Select check-out date"
             />
+            <input type="date" value={checkOut}
+              onChange={ev => setCheckOut(ev.target.value)} />
           </div>
         </div>
         <div className="py-3 px-4 border-t">

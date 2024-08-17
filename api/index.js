@@ -220,10 +220,33 @@ app.post('/api/bookings', async (req, res) => {
 
 
 
-app.get('/api/bookings', async (req,res) => {
-  mongoose.connect(process.env.MONGO_URL);
-  const userData = await getUserDataFromReq(req);
-  res.json( await Booking.find({user:userData.id}).populate('place') );
+
+app.get('/api/bookings', async (req, res) => {
+  const { place, checkIn, checkOut } = req.query;
+  
+  try {
+    mongoose.connect(process.env.MONGO_URL);
+
+    const userData = await getUserDataFromReq(req);
+
+    let query = { user: userData.id };
+
+    if (place && checkIn && checkOut) {
+      query = {
+        user: userData.id,
+        place: mongoose.Types.ObjectId(place),
+        checkIn: { $lt: new Date(checkOut) },
+        checkOut: { $gt: new Date(checkIn) }
+      };
+    }
+
+    const bookings = await Booking.find(query).populate('place');
+
+    res.json(bookings);
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    res.status(500).json({ error: 'Error fetching bookings' });
+  }
 });
 
 app.listen(4000);
