@@ -27,21 +27,6 @@ export default function BookingWidget({ place }) {
   }
 
   async function bookThisPlace() {
-    const response = await fetch('/bookings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        checkIn,
-        checkOut,
-        numberOfGuests,
-        name,
-        phone,
-        place: place._id,
-        price: numberOfNights * place.price,
-      }),
-    });
-    const bookingId = await response.json();
-    setRedirect(`/account/bookings/${bookingId}`);
     if (!name || !phone) {
       alert("Please fill out your name and phone number.");
       return;
