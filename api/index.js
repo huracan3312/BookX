@@ -150,15 +150,12 @@ async function deletePhotoFromS3(filename) {
     const url = new URL(filename);
     const key = url.pathname.substring(1);
     const name = key.split('/').pop();
-    console.log(name)
     const command = new DeleteObjectCommand({
       Bucket: bucket,
       Key: name,
     });
     await client.send(command);
-    console.log(`Successfully deleted ${filename} from S3.`);
   } catch (error) {
-    console.error('Error deleting file from S3:', error);
     throw error;
   }
 }
