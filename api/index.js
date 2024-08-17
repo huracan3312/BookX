@@ -202,6 +202,21 @@ app.get('/api/places', async (req,res) => {
   res.json( await Place.find() );
 });
 
+app.delete('/api/places/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await Place.findByIdAndDelete(id);
+    if (result) {
+      res.status(200).json({ message: 'Place deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Place not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting place:', error);
+    res.status(500).json({ error: 'Error deleting place' });
+  }
+});
+
 app.post('/api/bookings', async (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
   const userData = await getUserDataFromReq(req);
@@ -217,9 +232,6 @@ app.post('/api/bookings', async (req, res) => {
     throw err;
   });
 });
-
-
-
 
 app.get('/api/bookings', async (req, res) => {
   const { place, checkIn, checkOut } = req.query;
