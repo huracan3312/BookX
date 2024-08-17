@@ -25,6 +25,10 @@ export default function BookingWidget({place}) {
   }
 
   async function bookThisPlace() {
+    if (!name || !phone) {
+      alert("Please fill out your name and phone number.");
+      return;
+    }
     const response = await axios.post('/bookings', {
       checkIn,checkOut,numberOfGuests,name,phone,
       place:place._id,
