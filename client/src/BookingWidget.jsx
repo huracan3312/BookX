@@ -1,41 +1,40 @@
-import {useContext, useEffect, useState} from "react";
-import {differenceInCalendarDays} from "date-fns";
-import axios from "axios";
-import {Navigate} from "react-router-dom";
-import {UserContext} from "./UserContext.jsx";
+import React, { useState } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
-export default function BookingWidget({place}) {
-  const [checkIn,setCheckIn] = useState('');
-  const [checkOut,setCheckOut] = useState('');
-  const [numberOfGuests,setNumberOfGuests] = useState(1);
-  const [name,setName] = useState('');
-  const [phone,setPhone] = useState('');
-  const [redirect,setRedirect] = useState('');
-  const {user} = useContext(UserContext);
-
-  useEffect(() => {
-    if (user) {
-      setName(user.name);
-    }
-  }, [user]);
+export default function BookingWidget({ place }) {
+  const [checkIn, setCheckIn] = useState(null);
+  const [checkOut, setCheckOut] = useState(null);
+  const [numberOfGuests, setNumberOfGuests] = useState(1);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [redirect, setRedirect] = useState('');
 
   let numberOfNights = 0;
   if (checkIn && checkOut) {
-    numberOfNights = differenceInCalendarDays(new Date(checkOut), new Date(checkIn));
+    numberOfNights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
   }
 
   async function bookThisPlace() {
-    const response = await axios.post('/bookings', {
-      checkIn,checkOut,numberOfGuests,name,phone,
-      place:place._id,
-      price:numberOfNights * place.price,
+    const response = await fetch('/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        checkIn,
+        checkOut,
+        numberOfGuests,
+        name,
+        phone,
+        place: place._id,
+        price: numberOfNights * place.price,
+      }),
     });
-    const bookingId = response.data._id;
+    const bookingId = await response.json();
     setRedirect(`/account/bookings/${bookingId}`);
   }
 
   if (redirect) {
-    return <Navigate to={redirect} />
+    return <Navigate to={redirect} />;
   }
 
   return (
@@ -45,34 +44,59 @@ export default function BookingWidget({place}) {
       </div>
       <div className="border rounded-2xl mt-4">
         <div className="flex">
-          <div className="py-3 px-4">
+          <div className="py-3 px-4 flex-1">
             <label>Check in:</label>
-            <input type="date"
-                   value={checkIn}
-                   onChange={ev => setCheckIn(ev.target.value)}/>
+            <DatePicker
+              selected={checkIn}
+              onChange={dates => {
+                const [start, end] = dates;
+                setCheckIn(start);
+                setCheckOut(end);
+              }}
+              startDate={checkIn}
+              endDate={checkOut}
+              selectsRange
+              minDate={new Date()}
+              className="form-input"
+              placeholderText="Select check-in date"
+            />
           </div>
-          <div className="py-3 px-4 border-l">
+          <div className="py-3 px-4 flex-1">
             <label>Check out:</label>
-            <input type="date" value={checkOut}
-                   onChange={ev => setCheckOut(ev.target.value)}/>
+            <DatePicker
+              selected={checkOut}
+              onChange={date => setCheckOut(date)}
+              startDate={checkIn}
+              endDate={checkOut}
+              minDate={checkIn || new Date()}
+              selectsEnd
+              className="form-input"
+              placeholderText="Select check-out date"
+            />
           </div>
         </div>
         <div className="py-3 px-4 border-t">
           <label>Number of guests:</label>
-          <input type="number"
-                 value={numberOfGuests}
-                 onChange={ev => setNumberOfGuests(ev.target.value)}/>
+          <input
+            type="number"
+            value={numberOfGuests}
+            onChange={ev => setNumberOfGuests(ev.target.value)}
+          />
         </div>
         {numberOfNights > 0 && (
           <div className="py-3 px-4 border-t">
             <label>Your full name:</label>
-            <input type="text"
-                   value={name}
-                   onChange={ev => setName(ev.target.value)}/>
+            <input
+              type="text"
+              value={name}
+              onChange={ev => setName(ev.target.value)}
+            />
             <label>Phone number:</label>
-            <input type="tel"
-                   value={phone}
-                   onChange={ev => setPhone(ev.target.value)}/>
+            <input
+              type="tel"
+              value={phone}
+              onChange={ev => setPhone(ev.target.value)}
+            />
           </div>
         )}
       </div>
