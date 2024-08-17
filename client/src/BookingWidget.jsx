@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useContext, useEffect, useState } from "react";
@@ -111,9 +110,6 @@ export default function BookingWidget({ place }) {
               className="form-input"
               placeholderText="Select check-in date"
             />
-            <input type="date"
-              value={checkIn}
-              onChange={ev => setCheckIn(ev.target.value)} />
           </div>
           <div className="py-3 px-4 flex-1">
             <label>Check out:</label>
@@ -127,8 +123,6 @@ export default function BookingWidget({ place }) {
               className="form-input"
               placeholderText="Select check-out date"
             />
-            <input type="date" value={checkOut}
-              onChange={ev => setCheckOut(ev.target.value)} />
           </div>
         </div>
         <div className="py-3 px-4 border-t">
