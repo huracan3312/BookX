@@ -27,10 +27,24 @@ export default function PhotosUploader({addedPhotos,onChange}) {
       });
     })
   }
-  function removePhoto(ev,filename) {
+  async function removePhoto(ev, filename) {
     ev.preventDefault();
-    onChange([...addedPhotos.filter(photo => photo !== filename)]);
-  }
+    try {
+        const response = await axios.delete('/delete-photo', {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            data: { filename },
+        });
+        if (response.status === 200) {
+            onChange([...addedPhotos.filter(photo => photo !== filename)]);
+        } else {
+            alert('Error al eliminar la foto en S3:');
+        }
+    } catch (error) {
+        alert('Error al eliminar la foto:');
+    }
+}
   function selectAsMainPhoto(ev,filename) {
     ev.preventDefault();
     onChange([filename,...addedPhotos.filter(photo => photo !== filename)]);

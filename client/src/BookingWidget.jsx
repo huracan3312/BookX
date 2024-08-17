@@ -85,7 +85,6 @@ export default function BookingWidget({ place }) {
         alert("The room isn't available in the selected dates");
       }
     } catch (error) {
-      console.error('Error fetching or creating booking:', error);
       alert('An error occurred while processing your booking.');
     }
   }
