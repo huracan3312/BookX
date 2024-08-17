@@ -59,14 +59,20 @@ export default function BookingWidget({ place }) {
       });
 
       if (isRoomAvailable) {
-        const bookingResponse = await axios.post('/bookings', {
-          checkIn, checkOut, numberOfGuests, name, phone,
-          place: place._id,
-          price: numberOfNights * place.price,
-        });
+        if (numberOfGuests <= place.maxGuests ) {
+          
+          const bookingResponse = await axios.post('/bookings', {
+            checkIn, checkOut, numberOfGuests, name, phone,
+            place: place._id,
+            price: numberOfNights * place.price,
+          });
+  
+          const bookingId = bookingResponse.data._id;
+          setRedirect(`/account/bookings/${bookingId}`);
+        } else {
+          alert("The number of guests exceeds the maximum of the room")
+        }
 
-        const bookingId = bookingResponse.data._id;
-        setRedirect(`/account/bookings/${bookingId}`);
       } else {
         alert("The room isn't available in the selected dates");
       }
