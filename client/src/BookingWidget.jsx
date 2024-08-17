@@ -29,38 +29,22 @@ export default function BookingWidget({ place }) {
       alert("Please fill out your name and phone number.");
       return;
     }
-
+  
     try {
-      const response = await axios.get('/bookings', {});
-      // Asegúrate de que los IDs se comparen como strings
-    const placeId = place._id.toString();
-
-    // Filtrar las reservas por el placeId seleccionado
-    const bookings = response.data.filter(booking => {
-      // Convierte booking.place a string si es un ObjectId
-      const bookingPlaceId = booking.place._id.toString();
-
-      // Compara los IDs como strings
-      return bookingPlaceId === placeId;
-    });
-
-      // Validar si la habitación está reservada entre las fechas seleccionadas
-      const isRoomAvailable = bookings.every(booking => {
-
-        const bookingCheckIn = new Date(booking.checkIn);
-        const bookingCheckOut = new Date(booking.checkOut);
-        const checkInDate = new Date(checkIn);
-        const checkOutDate = new Date(checkOut);
-
-        // La habitación está disponible si:
-        // 1. La fecha de salida deseada es anterior o igual a la fecha de entrada de la reserva existente.
-        // 2. La fecha de entrada deseada es posterior o igual a la fecha de salida de la reserva existente.
-        return (checkOutDate <= bookingCheckIn || checkInDate >= bookingCheckOut);
+      // Solicita solo las reservas relevantes al backend
+      const response = await axios.get('/bookings', {
+        params: {
+          place: place._id.toString(),
+          checkIn: checkIn.toString(),
+          checkOut: checkOut.toString()
+        }
       });
-
-      if (isRoomAvailable) {
-        if (numberOfGuests <= place.maxGuests ) {
-          
+  
+      const bookings = response.data;
+  
+      // Verificar disponibilidad (ahora solo reserva las fechas relevantes)
+      if (bookings.length === 0) {
+        if (numberOfGuests <= place.maxGuests) {
           const bookingResponse = await axios.post('/bookings', {
             checkIn, checkOut, numberOfGuests, name, phone,
             place: place._id,
@@ -70,9 +54,8 @@ export default function BookingWidget({ place }) {
           const bookingId = bookingResponse.data._id;
           setRedirect(`/account/bookings/${bookingId}`);
         } else {
-          alert("The number of guests exceeds the maximum of the room")
+          alert("The number of guests exceeds the maximum of the room");
         }
-
       } else {
         alert("The room isn't available in the selected dates");
       }
@@ -81,11 +64,11 @@ export default function BookingWidget({ place }) {
       alert('An error occurred while processing your booking.');
     }
   }
-
+  
   if (redirect) {
     return <Navigate to={redirect} />;
   }
-
+  
 
   return (
     <div className="bg-white shadow p-4 rounded-2xl">
