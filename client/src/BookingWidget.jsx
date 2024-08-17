@@ -1,3 +1,6 @@
+import React, { useState } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { useContext, useEffect, useState } from "react";
 import { differenceInCalendarDays } from "date-fns";
 import axios from "axios";
@@ -5,8 +8,8 @@ import { Navigate } from "react-router-dom";
 import { UserContext } from "./UserContext.jsx";
 
 export default function BookingWidget({ place }) {
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
+  const [checkIn, setCheckIn] = useState(null);
+  const [checkOut, setCheckOut] = useState(null);
   const [numberOfGuests, setNumberOfGuests] = useState(1);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -21,10 +24,25 @@ export default function BookingWidget({ place }) {
 
   let numberOfNights = 0;
   if (checkIn && checkOut) {
-    numberOfNights = differenceInCalendarDays(new Date(checkOut), new Date(checkIn));
+    numberOfNights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
   }
 
   async function bookThisPlace() {
+    const response = await fetch('/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        checkIn,
+        checkOut,
+        numberOfGuests,
+        name,
+        phone,
+        place: place._id,
+        price: numberOfNights * place.price,
+      }),
+    });
+    const bookingId = await response.json();
+    setRedirect(`/account/bookings/${bookingId}`);
     if (!name || !phone) {
       alert("Please fill out your name and phone number.");
       return;
@@ -77,34 +95,64 @@ export default function BookingWidget({ place }) {
       </div>
       <div className="border rounded-2xl mt-4">
         <div className="flex">
-          <div className="py-3 px-4">
+          <div className="py-3 px-4 flex-1">
             <label>Check in:</label>
+            <DatePicker
+              selected={checkIn}
+              onChange={dates => {
+                const [start, end] = dates;
+                setCheckIn(start);
+                setCheckOut(end);
+              }}
+              startDate={checkIn}
+              endDate={checkOut}
+              selectsRange
+              minDate={new Date()}
+              className="form-input"
+              placeholderText="Select check-in date"
+            />
             <input type="date"
               value={checkIn}
               onChange={ev => setCheckIn(ev.target.value)} />
           </div>
-          <div className="py-3 px-4 border-l">
+          <div className="py-3 px-4 flex-1">
             <label>Check out:</label>
+            <DatePicker
+              selected={checkOut}
+              onChange={date => setCheckOut(date)}
+              startDate={checkIn}
+              endDate={checkOut}
+              minDate={checkIn || new Date()}
+              selectsEnd
+              className="form-input"
+              placeholderText="Select check-out date"
+            />
             <input type="date" value={checkOut}
               onChange={ev => setCheckOut(ev.target.value)} />
           </div>
         </div>
         <div className="py-3 px-4 border-t">
           <label>Number of guests:</label>
-          <input type="number"
+          <input
+            type="number"
             value={numberOfGuests}
-            onChange={ev => setNumberOfGuests(ev.target.value)} />
+            onChange={ev => setNumberOfGuests(ev.target.value)}
+          />
         </div>
         {numberOfNights > 0 && (
           <div className="py-3 px-4 border-t">
             <label>Your full name:</label>
-            <input type="text"
+            <input
+              type="text"
               value={name}
-              onChange={ev => setName(ev.target.value)} />
+              onChange={ev => setName(ev.target.value)}
+            />
             <label>Phone number:</label>
-            <input type="tel"
+            <input
+              type="tel"
               value={phone}
-              onChange={ev => setPhone(ev.target.value)} />
+              onChange={ev => setPhone(ev.target.value)}
+            />
           </div>
         )}
       </div>
