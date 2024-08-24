@@ -39,6 +39,3 @@ button.secondary{
 @apply bg-primary !important;
 }
 
-.widget {
-    width: 450px;
-}

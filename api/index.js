@@ -315,4 +315,19 @@ app.get('/api/bookings', async (req, res) => {
   }
 });
 
+app.delete('/api/bookings/:id', async (req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  const bookingId = req.params.id;
+  try {
+    const deletedBooking = await Booking.findByIdAndDelete(bookingId);
+    if (!deletedBooking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+    res.json({ message: "Booking deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "An error occurred", error: err.message });
+  }
+});
+
+
 app.listen(4000);

@@ -109,7 +109,7 @@ export default function BookingWidget({ place }) {
       </div>
       <div className="border rounded-2xl mt-4">
         <div className="flex">
-          <div className="py-3 px-4 flex-1 min-w-[300px]">
+          <div className="py-3 px-4 flex-1 min-w-[200px]">
             <label>Check in:</label>
             <DatePicker
               selected={checkIn}
@@ -127,7 +127,7 @@ export default function BookingWidget({ place }) {
               filterDate={date => !isDateBlocked(date)}
             />
           </div>
-          <div className="py-3 px-4 flex-1 min-w-[300px]">
+          <div className="py-3 px-4 flex-1 min-w-[200px]">
             <label>Check out:</label>
             <DatePicker
               selected={checkOut}

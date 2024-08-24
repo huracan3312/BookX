@@ -4,8 +4,10 @@ import axios from "axios";
 import AddressLink from "../AddressLink";
 import PlaceGallery from "../PlaceGallery";
 import BookingDates from "../BookingDates";
+import { Navigate } from "react-router-dom";
 
 export default function BookingPage() {
+  const [redirect, setRedirect] = useState('');
   const {id} = useParams();
   const [booking,setBooking] = useState(null);
   useEffect(() => {
@@ -22,6 +24,23 @@ export default function BookingPage() {
   if (!booking) {
     return '';
   }
+  async function cancelBooking(ev) {
+    ev.preventDefault();
+    const isConfirmed = window.confirm('Are you sure you want to cancel this booking?');
+    if (isConfirmed) {
+      try {
+        await axios.delete(`/bookings/${id}`);
+        alert('Booking canceled!');
+        setRedirect(`/account/bookings/`);
+      } catch (e) {
+        alert('Cancellation failed. Please try again later');
+      }
+    } else {
+    }}
+    console.log(redirect)
+    if (redirect) {
+      return <Navigate to={redirect} />;
+    }
 
   return (
     <div className="my-8">
@@ -38,6 +57,7 @@ export default function BookingPage() {
         </div>
       </div>
       <PlaceGallery place={booking.place} />
+      <button className="primary my-4 w-full" onClick={cancelBooking}>Cancel Booking</button>
     </div>
   );
 }
