@@ -32,9 +32,9 @@ button.secondary{
 }
 
 .react-datepicker__day--selected {
-@apply bg-blue-500 text-white;
+@apply bg-primary text-white;
 }
 
 .react-datepicker__day--range-end {
-@apply bg-blue-300;
+@apply bg-primary;
 }
