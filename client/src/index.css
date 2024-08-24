@@ -24,7 +24,7 @@ button.secondary{
 }
 
 .form-input {
-@apply border rounded-lg px-3 py-2 w-full;
+    @apply border rounded-lg px-3 py-2 w-full;
 }
 
 .react-datepicker__day--in-range {
@@ -36,5 +36,9 @@ button.secondary{
 }
 
 .react-datepicker__day--range-end {
-@apply bg-primary;
+@apply bg-primary !important;
+}
+
+.widget {
+    width: 450px;
 }

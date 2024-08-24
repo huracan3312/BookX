@@ -68,10 +68,12 @@ app.get('/api/test', (req,res) => {
 
 app.post('/api/register', async (req,res) => {
   mongoose.connect(process.env.MONGO_URL);
-  const {name,email,password} = req.body;
+  const {name,lastName,phoneNumber,email,password} = req.body;
   try {
     const userDoc = await User.create({
       name,
+      lastName,
+      phoneNumber,
       email,
       password:bcrypt.hashSync(password, bcryptSalt),
     });
@@ -81,6 +83,34 @@ app.post('/api/register', async (req,res) => {
   }
 
 });
+
+app.put('/api/register', async (req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  const { name, lastName, phoneNumber, email, password } = req.body;
+
+  try {
+    const userDoc = await User.findOneAndUpdate(
+      { email: email },
+      {
+        name,
+        lastName,
+        phoneNumber,
+        password: bcrypt.hashSync(password, bcryptSalt),
+      },
+      { new: true }
+    );
+
+    if (!userDoc) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(userDoc);
+  } catch (e) {
+    res.status(422).json(e);
+  }
+});
+
+
 
 app.post('/api/login', async (req,res) => {
   mongoose.connect(process.env.MONGO_URL);
@@ -110,8 +140,8 @@ app.get('/api/profile', (req,res) => {
   if (token) {
     jwt.verify(token, jwtSecret, {}, async (err, userData) => {
       if (err) throw err;
-      const {name,email,_id} = await User.findById(userData.id);
-      res.json({name,email,_id});
+      const {name,lastName,phoneNumber,email,password,_id} = await User.findById(userData.id);
+      res.json({name,lastName,phoneNumber,email,password,_id});
     });
   } else {
     res.json(null);

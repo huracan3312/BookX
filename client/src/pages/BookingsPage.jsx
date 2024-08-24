@@ -24,7 +24,7 @@ export default function BookingsPage() {
             </div>
             <div className="py-3 pr-3 grow">
               <h2 className="text-xl">{booking.place.title}</h2>
-              <div className="text-xl">
+              <div className="text-sm">
                 <BookingDates booking={booking} className="mb-2 mt-4 text-gray-500" />
                 <div className="flex gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
