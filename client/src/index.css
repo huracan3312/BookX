@@ -38,3 +38,9 @@ button.secondary{
 .react-datepicker__day--range-end {
 @apply bg-primary;
 }
+
+.modal-image-container {
+    position: relative;
+    z-index: 1000;
+  }
+  

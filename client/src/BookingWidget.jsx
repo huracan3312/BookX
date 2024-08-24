@@ -13,6 +13,7 @@ export default function BookingWidget({ place }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [redirect, setRedirect] = useState('');
+  const [occupiedDates, setOccupiedDates] = useState([]);
   const { user } = useContext(UserContext);
 
   useEffect(() => {
@@ -20,6 +21,28 @@ export default function BookingWidget({ place }) {
       setName(user.name);
     }
   }, [user]);
+
+  useEffect(() => {
+    // Fetch occupied dates from the backend
+    // Hacerlo cuando se abra el datepicker
+    async function fetchOccupiedDates() {
+      try {
+        // const response = await axios.get('/occupied-dates', {
+        //   params: {
+        //     place: place._id.toString()
+        //   }
+        // });
+        let response = [
+          { "start": "2024-09-10T00:00:00Z", "end": "2024-09-15T00:00:00Z" },
+          { "start": "2024-08-20T00:00:00Z", "end": "2024-08-25T00:00:00Z" }
+        ];
+        setOccupiedDates(response);
+      } catch (error) {
+        console.error('Error fetching occupied dates:', error);
+      }
+    }
+    fetchOccupiedDates();
+  }, [place._id]);
 
   let numberOfNights = 0;
   if (checkIn && checkOut) {
@@ -70,6 +93,13 @@ export default function BookingWidget({ place }) {
   if (redirect) {
     return <Navigate to={redirect} />;
   }
+
+    // Convert the occupied dates to an array of date objects
+    const isDateBlocked = date => {
+      return occupiedDates.some(occupiedDate =>
+        date >= new Date(occupiedDate.start) && date <= new Date(occupiedDate.end)
+      );
+    };
   
 
   return (
@@ -79,7 +109,7 @@ export default function BookingWidget({ place }) {
       </div>
       <div className="border rounded-2xl mt-4">
         <div className="flex">
-          <div className="py-3 px-4 flex-1">
+          <div className="py-3 px-4 flex-1 min-w-[300px]">
             <label>Check in:</label>
             <DatePicker
               selected={checkIn}
@@ -94,9 +124,10 @@ export default function BookingWidget({ place }) {
               minDate={new Date()}
               className="form-input"
               placeholderText="Select check-in date"
+              filterDate={date => !isDateBlocked(date)}
             />
           </div>
-          <div className="py-3 px-4 flex-1">
+          <div className="py-3 px-4 flex-1 min-w-[300px]">
             <label>Check out:</label>
             <DatePicker
               selected={checkOut}
@@ -107,6 +138,7 @@ export default function BookingWidget({ place }) {
               selectsEnd
               className="form-input"
               placeholderText="Select check-out date"
+              filterDate={date => !isDateBlocked(date)}
             />
           </div>
         </div>
