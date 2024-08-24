@@ -75,6 +75,14 @@ export default function PlacesFormPage() {
     }
 
   }
+  async function deletePlace() {
+    if (!id) return;
+    const confirmed = window.confirm("Are you sure you want to delete this place?");
+    if (confirmed) {
+      await axios.delete('/places/' + id);
+      setRedirect(true);
+    }
+  }
 
   if (redirect) {
     return <Navigate to={'/account/places'} />
@@ -125,7 +133,12 @@ export default function PlacesFormPage() {
                    onChange={ev => setPrice(ev.target.value)}/>
           </div>
         </div>
-        <button className="primary my-4">Save</button>
+        <div className={`grid gap-2 ${id ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          {id && (
+            <button type="button" className="secondary my-4" onClick={deletePlace}>Delete</button>
+          )}
+          <button className="primary my-4 w-full">Save</button>
+        </div>  
       </form>
     </div>
   );

@@ -74,6 +74,7 @@ export default function BookingWidget({ place }) {
             checkIn, checkOut, numberOfGuests, name, phone,
             place: place._id,
             price: numberOfNights * place.price,
+            guests: numberOfGuests,
           });
   
           const bookingId = bookingResponse.data._id;
