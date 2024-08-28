@@ -8,7 +8,7 @@ import AddressLink from "../AddressLink";
 export default function PlacePage() {
   const { id } = useParams();
   const [place, setPlace] = useState(null);
-  const [perks, setPerks] = useState('');
+  const [perks, setPerks] = useState([]);
   function parseSvg(svgString) {
     const parser = new DOMParser();
     const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
@@ -24,7 +24,6 @@ export default function PlacePage() {
     });
     axios.get('/perks').then(response => {
       setPerks(response.data);
-      console.log(perks)
     });
   }, [id]);
 
