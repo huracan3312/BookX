@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const User = require('./models/User.js');
 const Place = require('./models/Place.js');
 const Booking = require('./models/Booking.js');
+const Perks = require('./models/Perks.js');
 const cookieParser = require('cookie-parser');
 const imageDownloader = require('image-downloader');
 const {S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
@@ -328,6 +329,26 @@ app.delete('/api/bookings/:id', async (req, res) => {
     res.status(500).json({ message: "An error occurred", error: err.message });
   }
 });
+
+app.get('/api/perks', async (req,res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  res.json( await Perks.find() );
+});
+
+app.post('/api/perks', async (req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  const {
+    name,description,icon,
+  } = req.body;
+  Perks.create({
+    name,description,icon,
+  }).then((doc) => {
+    res.json(doc);
+  }).catch((err) => {
+    throw err;
+  });
+});
+
 
 
 app.listen(4000);

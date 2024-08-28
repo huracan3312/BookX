@@ -37,7 +37,6 @@ export default function BookingPage() {
       }
     } else {
     }}
-    console.log(redirect)
     if (redirect) {
       return <Navigate to={redirect} />;
     }

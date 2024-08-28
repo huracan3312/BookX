@@ -1,12 +1,12 @@
-import {Link, useLocation} from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export default function AccountNav() {
-  const {pathname} = useLocation();
+  const { pathname } = useLocation();
   let subpage = pathname.split('/')?.[2];
   if (subpage === undefined) {
     subpage = 'profile';
   }
-  function linkClasses (type=null) {
+  function linkClasses(type = null) {
     let classes = 'inline-flex gap-1 py-2 px-6 rounded-full';
     if (type === subpage) {
       classes += ' bg-primary text-white';
@@ -34,6 +34,12 @@ export default function AccountNav() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205l3 1m1.5.5l-1.5-.5M6.75 7.364V3h-3v18m3-13.636l10.5-3.819" />
         </svg>
         My accommodations
+      </Link>
+      <Link className={linkClasses('perks')} to={'/account/perks'}>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8.242 5.992h12m-12 6.003H20.24m-12 5.999h12M4.117 7.495v-3.75H2.99m1.125 3.75H2.99m1.125 0H5.24m-1.92 2.577a1.125 1.125 0 1 1 1.591 1.59l-1.83 1.83h2.16M2.99 15.745h1.125a1.125 1.125 0 0 1 0 2.25H3.74m0-.002h.375a1.125 1.125 0 0 1 0 2.25H2.99" />
+        </svg>
+        My perks
       </Link>
     </nav>
   );
