@@ -254,10 +254,37 @@ app.put('/api/places', async (req,res) => {
   });
 });
 
-app.get('/api/places', async (req,res) => {
-  mongoose.connect(process.env.MONGO_URL);
-  res.json( await Place.find() );
+app.get('/api/places', async (req, res) => {
+  try {
+    await mongoose.connect(process.env.MONGO_URL);
+    
+    const { checkIn, checkOut } = req.query;
+
+    if (!checkIn || !checkOut) {
+      const places = await Place.find();
+      return res.json(places);
+    }
+
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+
+    const bookedPlaces = await Booking.find({
+      $or: [
+        { checkIn: { $lt: checkOutDate }, checkOut: { $gt: checkInDate } }
+      ]
+    }).distinct('place');
+
+    const availablePlaces = await Place.find({
+      _id: { $nin: bookedPlaces }
+    });
+
+    res.json(availablePlaces);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error en la consulta de lugares' });
+  }
 });
+
 
 app.delete('/api/places/:id', async (req, res) => {
   const { id } = req.params;
