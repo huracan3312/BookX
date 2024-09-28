@@ -1,17 +1,20 @@
-import './App.css'
-import {Route, Routes} from "react-router-dom";
+import "./App.css";
+import { Route, Routes } from "react-router-dom";
 import IndexPage from "./pages/IndexPage.jsx";
 import LoginPage from "./pages/LoginPage";
 import Layout from "./Layout";
 import RegisterPage from "./pages/RegisterPage";
 import axios from "axios";
-import {UserContextProvider} from "./UserContext";
+import { UserContextProvider } from "./UserContext";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import PlacesPage from "./pages/PlacesPage";
 import PlacesFormPage from "./pages/PlacesFormPage";
 import PlacePage from "./pages/PlacePage";
 import BookingsPage from "./pages/BookingsPage";
 import BookingPage from "./pages/BookingPage";
+import PlaceDetails from "./components/Host/HostDetails.jsx";
+import BookingWidget from "./components/Booking/BookingWidgetExternalEmbed.jsx";
+import BookingContirmation from "./components/Booking/BookingFlow.jsx";
 
 axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
 axios.defaults.withCredentials = true;
@@ -31,10 +34,16 @@ function App() {
           <Route path="/place/:id" element={<PlacePage />} />
           <Route path="/account/bookings" element={<BookingsPage />} />
           <Route path="/account/bookings/:id" element={<BookingPage />} />
+          <Route path="/host/details" element={<PlaceDetails />} />
+          <Route path="/externalBookingWidget" element={<BookingWidget />} />
+          <Route
+            path="/BookingConfirmation"
+            element={<BookingContirmation />}
+          />
         </Route>
       </Routes>
     </UserContextProvider>
-  )
+  );
 }
 
-export default App
+export default App;

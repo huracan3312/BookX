@@ -1,20 +1,21 @@
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useContext, useEffect, useState } from "react";
-import { differenceInCalendarDays } from "date-fns";
-import axios from "axios";
 import { Navigate } from "react-router-dom";
-import { UserContext } from "./UserContext.jsx";
+import axios from "axios";
+import { UserContext } from "../../UserContext.jsx";
 
 export default function BookingWidget({ place }) {
+  console.log("place", place);
   const [checkIn, setCheckIn] = useState(null);
   const [checkOut, setCheckOut] = useState(null);
   const [numberOfGuests, setNumberOfGuests] = useState(1);
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [redirect, setRedirect] = useState('');
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [redirect, setRedirect] = useState("");
   const [occupiedDates, setOccupiedDates] = useState([]);
   const { user } = useContext(UserContext);
+  const [showGuestInput, setShowGuestInput] = useState(false); // Nuevo estado
 
   useEffect(() => {
     if (user) {
@@ -23,22 +24,16 @@ export default function BookingWidget({ place }) {
   }, [user]);
 
   useEffect(() => {
-    // Fetch occupied dates from the backend
-    // Hacerlo cuando se abra el datepicker
     async function fetchOccupiedDates() {
       try {
-        // const response = await axios.get('/occupied-dates', {
-        //   params: {
-        //     place: place._id.toString()
-        //   }
-        // });
+        // Simula la respuesta del servidor
         let response = [
-          { "start": "2024-09-10T00:00:00Z", "end": "2024-09-15T00:00:00Z" },
-          { "start": "2024-08-20T00:00:00Z", "end": "2024-08-25T00:00:00Z" }
+          { start: "2024-09-10T00:00:00Z", end: "2024-09-15T00:00:00Z" },
+          { start: "2024-08-20T00:00:00Z", end: "2024-08-25T00:00:00Z" },
         ];
         setOccupiedDates(response);
       } catch (error) {
-        console.error('Error fetching occupied dates:', error);
+        console.error("Error fetching occupied dates:", error);
       }
     }
     fetchOccupiedDates();
@@ -54,29 +49,31 @@ export default function BookingWidget({ place }) {
       alert("Please fill out your name and phone number.");
       return;
     }
-  
+
     try {
-      // Solicita solo las reservas relevantes al backend
-      const response = await axios.get('/bookings', {
+      const response = await axios.get("/bookings", {
         params: {
           place: place._id.toString(),
           checkIn: checkIn.toString(),
-          checkOut: checkOut.toString()
-        }
+          checkOut: checkOut.toString(),
+        },
       });
-  
+
       const bookings = response.data;
-  
-      // Verificar disponibilidad (ahora solo reserva las fechas relevantes)
+
       if (bookings.length === 0) {
         if (numberOfGuests <= place.maxGuests) {
-          const bookingResponse = await axios.post('/bookings', {
-            checkIn, checkOut, numberOfGuests, name, phone,
+          const bookingResponse = await axios.post("/bookings", {
+            checkIn,
+            checkOut,
+            numberOfGuests,
+            name,
+            phone,
             place: place._id,
             price: numberOfNights * place.price,
             guests: numberOfGuests,
           });
-  
+
           const bookingId = bookingResponse.data._id;
           setRedirect(`/account/bookings/${bookingId}`);
         } else {
@@ -86,21 +83,21 @@ export default function BookingWidget({ place }) {
         alert("The room isn't available in the selected dates");
       }
     } catch (error) {
-      alert('An error occurred while processing your booking.');
+      alert("An error occurred while processing your booking.");
     }
   }
-  
+
   if (redirect) {
     return <Navigate to={redirect} />;
   }
 
-    // Convert the occupied dates to an array of date objects
-    const isDateBlocked = date => {
-      return occupiedDates.some(occupiedDate =>
-        date >= new Date(occupiedDate.start) && date <= new Date(occupiedDate.end)
-      );
-    };
-  
+  const isDateBlocked = (date) => {
+    return occupiedDates.some(
+      (occupiedDate) =>
+        date >= new Date(occupiedDate.start) &&
+        date <= new Date(occupiedDate.end)
+    );
+  };
 
   return (
     <div className="bg-white shadow p-4 rounded-2xl">
@@ -113,10 +110,11 @@ export default function BookingWidget({ place }) {
             <label>Check in:</label>
             <DatePicker
               selected={checkIn}
-              onChange={dates => {
+              onChange={(dates) => {
                 const [start, end] = dates;
                 setCheckIn(start);
                 setCheckOut(end);
+                //  setShowGuestInput(!!start && !!end); // Muestra el campo si hay fechas seleccionadas
               }}
               startDate={checkIn}
               endDate={checkOut}
@@ -124,54 +122,41 @@ export default function BookingWidget({ place }) {
               minDate={new Date()}
               className="form-input"
               placeholderText="Select check-in date"
-              filterDate={date => !isDateBlocked(date)}
+              filterDate={(date) => !isDateBlocked(date)}
             />
           </div>
           <div className="py-3 px-4 flex-1 min-w-[300px]">
             <label>Check out:</label>
             <DatePicker
               selected={checkOut}
-              onChange={date => setCheckOut(date)}
+              onChange={(date) => {
+                setCheckOut(date);
+                //  setShowGuestInput(!!checkIn && !!date); // Muestra el campo si hay fechas seleccionadas
+              }}
               startDate={checkIn}
               endDate={checkOut}
               minDate={checkIn || new Date()}
               selectsEnd
               className="form-input"
               placeholderText="Select check-out date"
-              filterDate={date => !isDateBlocked(date)}
+              filterDate={(date) => !isDateBlocked(date)}
             />
           </div>
         </div>
-        <div className="py-3 px-4 border-t">
-          <label>Number of guests:</label>
-          <input
-            type="number"
-            value={numberOfGuests}
-            onChange={ev => setNumberOfGuests(ev.target.value)}
-          />
-        </div>
-        {numberOfNights > 0 && (
+        {showGuestInput && ( // Renderizado condicional del campo Number of Guests
           <div className="py-3 px-4 border-t">
-            <label>Your full name:</label>
+            <label>Number of guests:</label>
             <input
-              type="text"
-              value={name}
-              onChange={ev => setName(ev.target.value)}
-            />
-            <label>Phone number:</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={ev => setPhone(ev.target.value)}
+              type="number"
+              value={numberOfGuests}
+              onChange={(ev) => setNumberOfGuests(ev.target.value)}
             />
           </div>
         )}
       </div>
       <button onClick={bookThisPlace} className="primary mt-4">
         Book this place
-        {numberOfNights > 0 && (
-          <span> ${numberOfNights * place.price}</span>
-        )}
+        {numberOfNights > 0 && <span> ${numberOfNights * place.price}</span>}
       </button>
     </div>
   );

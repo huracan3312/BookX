@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Booking Widget Test</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/react-datepicker/dist/react-datepicker.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="booking-widget"></div>
+
+    <script src="https://unpkg.com/react/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom/umd/react-dom.production.min.js"></script>
+    <script src="../dist/external-booking-widget.umd.js"></script>
+
+    <script>
+      const widgetProps = {
+        place: {
+          _id: "66c93762a51c37bf93bf6ee1",
+          owner: "66bc249ab84837c992fc55f8",
+          title: "Suite Presidencial",
+          address: "Ocean Drive, Miami FL",
+          photos: [
+            "https://example.com/image1.jpg",
+            "https://example.com/image2.jpg",
+          ],
+          description: "Beautiful suite in Miami...",
+          maxGuests: 2,
+          price: 300,
+        },
+      };
+
+      ReactDOM.render(
+        React.createElement(ExternalBookingWidget, widgetProps, null),
+        document.getElementById("booking-widget")
+      );
+    </script>
+  </body>
+</html>

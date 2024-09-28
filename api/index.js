@@ -1,34 +1,42 @@
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
 const mongoose = require("mongoose");
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('./models/User.js');
-const Place = require('./models/Place.js');
-const Booking = require('./models/Booking.js');
-const cookieParser = require('cookie-parser');
-const imageDownloader = require('image-downloader');
-const {S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
-const multer = require('multer');
-const fs = require('fs');
-const mime = require('mime-types');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("./models/User.js");
+const Place = require("./models/Place.js");
+const Booking = require("./models/Booking.js");
+const cookieParser = require("cookie-parser");
+const imageDownloader = require("image-downloader");
+const {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} = require("@aws-sdk/client-s3");
+const multer = require("multer");
+const fs = require("fs");
+const mime = require("mime-types");
+const hostRoutes = require("./routes/hostRoutes");
 
-require('dotenv').config();
+require("dotenv").config();
 const app = express();
 
 const bcryptSalt = bcrypt.genSaltSync(10);
-const jwtSecret = 'fasefraw4r5r3wq45wdfgw34twdfg';
+const jwtSecret = "fasefraw4r5r3wq45wdfgw34twdfg";
 const bucket = process.env.S3_BUCKET;
-const region =  process.env.S3_REGION
+const region = process.env.S3_REGION;
 
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads', express.static(__dirname+'/uploads'));
-app.use(cors({
-  credentials: true,
-  origin: 'http://localhost:5173',
-  optionSuccessStatus:200
-}));
+app.use("/uploads", express.static(__dirname + "/uploads"));
+app.use(
+  cors({
+    credentials: true,
+    origin: "http://localhost:5173",
+    optionSuccessStatus: 200,
+    methods: ["GET", "POST", "PUT", "DELETE"], // Métodos HTTP permitidos
+  })
+);
 const client = new S3Client({
   region: process.env.S3_REGION,
   endpoint: process.env.S3_ENDPOINT,
@@ -39,16 +47,18 @@ const client = new S3Client({
 });
 
 async function uploadToS3(path, originalFilename, mimetype) {
-  const parts = originalFilename.split('.');
+  const parts = originalFilename.split(".");
   const ext = parts[parts.length - 1];
-  const newFilename = Date.now() + '.' + ext;
-  await client.send(new PutObjectCommand({
-    Bucket: bucket,
-    Body: fs.readFileSync(path),
-    Key: newFilename,
-    ContentType: mimetype,
-    ACL: 'public-read',
-  }));
+  const newFilename = Date.now() + "." + ext;
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Body: fs.readFileSync(path),
+      Key: newFilename,
+      ContentType: mimetype,
+      ACL: "public-read",
+    })
+  );
   return `https://${bucket}.s3.${region}.amazonaws.com/RoomImages/${newFilename}`;
 }
 
@@ -61,95 +71,106 @@ function getUserDataFromReq(req) {
   });
 }
 
-app.get('/api/test', (req,res) => {
+app.get("/api/test", (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
-  res.json('test ok');
+  res.json("test ok");
 });
 
-app.post('/api/register', async (req,res) => {
+app.post("/api/register", async (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
-  const {name,email,password} = req.body;
+  const { name, email, password } = req.body;
   try {
     const userDoc = await User.create({
       name,
       email,
-      password:bcrypt.hashSync(password, bcryptSalt),
+      password: bcrypt.hashSync(password, bcryptSalt),
     });
     res.json(userDoc);
   } catch (e) {
     res.status(422).json(e);
   }
-
 });
 
-app.post('/api/login', async (req,res) => {
+app.post("/api/login", async (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
-  const {email,password} = req.body;
-  const userDoc = await User.findOne({email});
+  const { email, password } = req.body;
+  const userDoc = await User.findOne({ email });
   if (userDoc) {
     const passOk = bcrypt.compareSync(password, userDoc.password);
     if (passOk) {
-      jwt.sign({
-        email:userDoc.email,
-        id:userDoc._id
-      }, jwtSecret, {}, (err,token) => {
-        if (err) throw err;
-        res.cookie('token', token).json(userDoc);
-      });
+      jwt.sign(
+        {
+          email: userDoc.email,
+          id: userDoc._id,
+        },
+        jwtSecret,
+        {},
+        (err, token) => {
+          if (err) throw err;
+          res.cookie("token", token).json(userDoc);
+        }
+      );
     } else {
-      res.status(422).json('pass not ok');
+      res.status(422).json("pass not ok");
     }
   } else {
-    res.json('not found');
+    res.json("not found");
   }
 });
 
-app.get('/api/profile', (req,res) => {
+app.get("/api/profile", (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
-  const {token} = req.cookies;
+  const { token } = req.cookies;
   if (token) {
     jwt.verify(token, jwtSecret, {}, async (err, userData) => {
       if (err) throw err;
-      const {name,email,_id} = await User.findById(userData.id);
-      res.json({name,email,_id});
+      const { name, email, _id } = await User.findById(userData.id);
+      res.json({ name, email, _id });
     });
   } else {
     res.json(null);
   }
 });
 
-app.post('/api/logout', (req,res) => {
-  res.cookie('token', '').json(true);
+app.post("/api/logout", (req, res) => {
+  res.cookie("token", "").json(true);
 });
 
-
-app.post('/api/upload-by-link', async (req,res) => {
-  const {link} = req.body;
-  const newName = 'photo' + Date.now() + '.jpg';
+app.post("/api/upload-by-link", async (req, res) => {
+  const { link } = req.body;
+  const newName = "photo" + Date.now() + ".jpg";
   await imageDownloader.image({
     url: link,
-    dest: '/tmp/' +newName,
+    dest: "/tmp/" + newName,
   });
-  const url = await uploadToS3('/tmp/' +newName, newName, mime.lookup('/tmp/' +newName));
+  const url = await uploadToS3(
+    "/tmp/" + newName,
+    newName,
+    mime.lookup("/tmp/" + newName)
+  );
   res.json(url);
 });
 
-const photosMiddleware = multer({dest:'/tmp'});
-app.post('/api/upload', photosMiddleware.array('photos', 100), async (req,res) => {
-  const uploadedFiles = [];
-  for (let i = 0; i < req.files.length; i++) {
-    const {path,originalname,mimetype} = req.files[i];
-    const url = await uploadToS3(path, originalname, mimetype);
-    uploadedFiles.push(url);
+const photosMiddleware = multer({ dest: "/tmp" });
+app.post(
+  "/api/upload",
+  photosMiddleware.array("photos", 100),
+  async (req, res) => {
+    const uploadedFiles = [];
+    for (let i = 0; i < req.files.length; i++) {
+      const { path, originalname, mimetype } = req.files[i];
+      const url = await uploadToS3(path, originalname, mimetype);
+      uploadedFiles.push(url);
+    }
+    res.json(uploadedFiles);
   }
-  res.json(uploadedFiles);
-});
+);
 
 async function deletePhotoFromS3(filename) {
   try {
     const url = new URL(filename);
     const key = url.pathname.substring(1);
-    const name = key.split('/').pop();
+    const name = key.split("/").pop();
     const command = new DeleteObjectCommand({
       Bucket: bucket,
       Key: name,
@@ -160,107 +181,183 @@ async function deletePhotoFromS3(filename) {
   }
 }
 
-app.delete('/api/delete-photo', async (req, res) => {
+app.delete("/api/delete-photo", async (req, res) => {
   try {
-      const response = await deletePhotoFromS3(req.body.filename);
-      res.status(200).send({ message: 'Foto eliminada correctamente' });
+    const response = await deletePhotoFromS3(req.body.filename);
+    res.status(200).send({ message: "Foto eliminada correctamente" });
   } catch (error) {
-      res.status(500).send({ error: 'Error al eliminar la foto' });
+    res.status(500).send({ error: "Error al eliminar la foto" });
   }
 });
 
-app.post('/api/places', (req,res) => {
+app.post("/api/places", (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
-  const {token} = req.cookies;
+  const { token } = req.cookies;
   const {
-    title,address,addedPhotos,description,price,
-    perks,extraInfo,checkIn,checkOut,maxGuests,
+    title,
+    address,
+    addedPhotos,
+    description,
+    price,
+    perks,
+    extraInfo,
+    checkIn,
+    checkOut,
+    maxGuests,
   } = req.body;
   jwt.verify(token, jwtSecret, {}, async (err, userData) => {
     if (err) throw err;
     const placeDoc = await Place.create({
-      owner:userData.id,price,
-      title,address,photos:addedPhotos,description,
-      perks,extraInfo,checkIn,checkOut,maxGuests,
+      owner: userData.id,
+      price,
+      title,
+      address,
+      photos: addedPhotos,
+      description,
+      perks,
+      extraInfo,
+      checkIn,
+      checkOut,
+      maxGuests,
     });
     res.json(placeDoc);
   });
 });
 
-app.get('/api/user-places', (req,res) => {
+app.get("/api/user-places", (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
-  const {token} = req.cookies;
+  const { token } = req.cookies;
   jwt.verify(token, jwtSecret, {}, async (err, userData) => {
-    const {id} = userData;
-    res.json( await Place.find({owner:id}) );
+    const { id } = userData;
+    res.json(await Place.find({ owner: id }));
   });
 });
 
-app.get('/api/places/:id', async (req,res) => {
+app.get("/api/places/:id", async (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
-  const {id} = req.params;
+  const { id } = req.params;
   res.json(await Place.findById(id));
 });
 
-app.put('/api/places', async (req,res) => {
+app.put("/api/places", async (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
-  const {token} = req.cookies;
+  const { token } = req.cookies;
   const {
-    id, title,address,addedPhotos,description,
-    perks,extraInfo,checkIn,checkOut,maxGuests,price,
+    id,
+    title,
+    address,
+    addedPhotos,
+    description,
+    perks,
+    extraInfo,
+    checkIn,
+    checkOut,
+    maxGuests,
+    price,
   } = req.body;
   jwt.verify(token, jwtSecret, {}, async (err, userData) => {
     if (err) throw err;
     const placeDoc = await Place.findById(id);
     if (userData.id === placeDoc.owner.toString()) {
       placeDoc.set({
-        title,address,photos:addedPhotos,description,
-        perks,extraInfo,checkIn,checkOut,maxGuests,price,
+        title,
+        address,
+        photos: addedPhotos,
+        description,
+        perks,
+        extraInfo,
+        checkIn,
+        checkOut,
+        maxGuests,
+        price,
       });
       await placeDoc.save();
-      res.json('ok');
+      res.json("ok");
     }
   });
 });
 
-app.get('/api/places', async (req,res) => {
+app.get("/api/places", async (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
-  res.json( await Place.find() );
+  res.json(await Place.find());
 });
 
-app.delete('/api/places/:id', async (req, res) => {
+app.delete("/api/places/:id", async (req, res) => {
   const { id } = req.params;
   try {
     const result = await Place.findByIdAndDelete(id);
     if (result) {
-      res.status(200).json({ message: 'Place deleted successfully' });
+      res.status(200).json({ message: "Place deleted successfully" });
     } else {
-      res.status(404).json({ error: 'Place not found' });
+      res.status(404).json({ error: "Place not found" });
     }
   } catch (error) {
-    res.status(500).json({ error: 'Error deleting place' });
+    res.status(500).json({ error: "Error deleting place" });
   }
 });
 
-app.post('/api/bookings', async (req, res) => {
+app.post("/api/bookings", async (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
   const userData = await getUserDataFromReq(req);
-  const {
-    place,checkIn,checkOut,guests,name,phone,price,
-  } = req.body;
+  const { place, checkIn, checkOut, guests, name, phone, price } = req.body;
   Booking.create({
-    place,checkIn,checkOut,guests,name,phone,price,
-    user:userData.id,
-  }).then((doc) => {
-    res.json(doc);
-  }).catch((err) => {
-    throw err;
-  });
+    place,
+    checkIn,
+    checkOut,
+    guests,
+    name,
+    phone,
+    price,
+    user: userData.id,
+  })
+    .then((doc) => {
+      res.json(doc);
+    })
+    .catch((err) => {
+      throw err;
+    });
 });
 
-app.get('/api/bookings', async (req, res) => {
+app.post("/api/hosts", async (req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+
+  try {
+    const userData = await getUserDataFromReq(req);
+    const {
+      title,
+      address,
+      addedPhotos,
+      currency,
+      country,
+      timeZone,
+      phone,
+      email,
+      website,
+    } = req.body;
+
+    const newHost = await Host.create({
+      owner: userData.id,
+      title,
+      address,
+      photos: addedPhotos,
+      description,
+      currency,
+      country,
+      timeZone,
+      phone,
+      email,
+      website,
+    });
+
+    res.status(201).json(newHost);
+  } catch (error) {
+    res.status(500).json({ message: "Error creating host", error });
+  }
+});
+
+app.get("/api/bookings", async (req, res) => {
   const { place, checkIn, checkOut } = req.query;
-  
+
   try {
     mongoose.connect(process.env.MONGO_URL);
 
@@ -273,15 +370,15 @@ app.get('/api/bookings', async (req, res) => {
         user: userData.id,
         place: mongoose.Types.ObjectId(place),
         checkIn: { $lt: new Date(checkOut) },
-        checkOut: { $gt: new Date(checkIn) }
+        checkOut: { $gt: new Date(checkIn) },
       };
     }
 
-    const bookings = await Booking.find(query).populate('place');
+    const bookings = await Booking.find(query).populate("place");
 
     res.json(bookings);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching bookings' });
+    res.status(500).json({ error: "Error fetching bookings" });
   }
 });
 
