@@ -1,22 +1,18 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const User = require("./models/User.js");
-const Place = require("./models/Place.js");
-const Booking = require("./models/Booking.js");
-const cookieParser = require("cookie-parser");
-const imageDownloader = require("image-downloader");
-const {
-  S3Client,
-  PutObjectCommand,
-  DeleteObjectCommand,
-} = require("@aws-sdk/client-s3");
-const multer = require("multer");
-const fs = require("fs");
-const mime = require("mime-types");
-const hostRoutes = require("./routes/hostRoutes");
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('./models/User.js');
+const Place = require('./models/Place.js');
+const Booking = require('./models/Booking.js');
+const Perks = require('./models/Perks.js');
+const cookieParser = require('cookie-parser');
+const imageDownloader = require('image-downloader');
+const {S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const multer = require('multer');
+const fs = require('fs');
+const mime = require('mime-types');
 
 require("dotenv").config();
 const app = express();
@@ -78,10 +74,12 @@ app.get("/api/test", (req, res) => {
 
 app.post("/api/register", async (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
-  const { name, email, password } = req.body;
+  const {name,lastName,phoneNumber,email,password} = req.body;
   try {
     const userDoc = await User.create({
       name,
+      lastName,
+      phoneNumber,
       email,
       password: bcrypt.hashSync(password, bcryptSalt),
     });
@@ -89,9 +87,38 @@ app.post("/api/register", async (req, res) => {
   } catch (e) {
     res.status(422).json(e);
   }
+
 });
 
-app.post("/api/login", async (req, res) => {
+app.put('/api/register', async (req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  const { name, lastName, phoneNumber, email, password } = req.body;
+
+  try {
+    const userDoc = await User.findOneAndUpdate(
+      { email: email },
+      {
+        name,
+        lastName,
+        phoneNumber,
+        password: bcrypt.hashSync(password, bcryptSalt),
+      },
+      { new: true }
+    );
+
+    if (!userDoc) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(userDoc);
+  } catch (e) {
+    res.status(422).json(e);
+  }
+});
+
+
+
+app.post('/api/login', async (req,res) => {
   mongoose.connect(process.env.MONGO_URL);
   const { email, password } = req.body;
   const userDoc = await User.findOne({ email });
@@ -124,8 +151,8 @@ app.get("/api/profile", (req, res) => {
   if (token) {
     jwt.verify(token, jwtSecret, {}, async (err, userData) => {
       if (err) throw err;
-      const { name, email, _id } = await User.findById(userData.id);
-      res.json({ name, email, _id });
+      const {name,lastName,phoneNumber,email,password,_id} = await User.findById(userData.id);
+      res.json({name,lastName,phoneNumber,email,password,_id});
     });
   } else {
     res.json(null);
@@ -277,10 +304,37 @@ app.put("/api/places", async (req, res) => {
   });
 });
 
-app.get("/api/places", async (req, res) => {
-  mongoose.connect(process.env.MONGO_URL);
-  res.json(await Place.find());
+app.get('/api/places', async (req, res) => {
+  try {
+    await mongoose.connect(process.env.MONGO_URL);
+    
+    const { checkIn, checkOut } = req.query;
+
+    if (!checkIn || !checkOut) {
+      const places = await Place.find();
+      return res.json(places);
+    }
+
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+
+    const bookedPlaces = await Booking.find({
+      $or: [
+        { checkIn: { $lt: checkOutDate }, checkOut: { $gt: checkInDate } }
+      ]
+    }).distinct('place');
+
+    const availablePlaces = await Place.find({
+      _id: { $nin: bookedPlaces }
+    });
+
+    res.json(availablePlaces);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error en la consulta de lugares' });
+  }
 });
+
 
 app.delete("/api/places/:id", async (req, res) => {
   const { id } = req.params;
@@ -378,8 +432,43 @@ app.get("/api/bookings", async (req, res) => {
 
     res.json(bookings);
   } catch (error) {
-    res.status(500).json({ error: "Error fetching bookings" });
+    res.status(500).json({ error: 'Error fetching bookings' });
   }
 });
+
+app.delete('/api/bookings/:id', async (req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  const bookingId = req.params.id;
+  try {
+    const deletedBooking = await Booking.findByIdAndDelete(bookingId);
+    if (!deletedBooking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+    res.json({ message: "Booking deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "An error occurred", error: err.message });
+  }
+});
+
+app.get('/api/perks', async (req,res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  res.json( await Perks.find() );
+});
+
+app.post('/api/perks', async (req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  const {
+    name,description,icon,
+  } = req.body;
+  Perks.create({
+    name,description,icon,
+  }).then((doc) => {
+    res.json(doc);
+  }).catch((err) => {
+    throw err;
+  });
+});
+
+
 
 app.listen(4000);

@@ -6,11 +6,15 @@ export default function RegisterPage() {
   const [name,setName] = useState('');
   const [email,setEmail] = useState('');
   const [password,setPassword] = useState('');
+  const [lastName,setLastName] = useState('');
+  const [phoneNumber,setPhoneNumber] = useState('');
   async function registerUser(ev) {
     ev.preventDefault();
     try {
       await axios.post('/register', {
         name,
+        lastName,
+        phoneNumber,
         email,
         password,
       });
@@ -24,14 +28,27 @@ export default function RegisterPage() {
       <div className="mb-64">
         <h1 className="text-4xl text-center mb-4">Register</h1>
         <form className="max-w-md mx-auto" onSubmit={registerUser}>
+          <h2 className="text-2xl mt-4">Name</h2>
           <input type="text"
-                 placeholder="John Doe"
+                 placeholder="John"
                  value={name}
                  onChange={ev => setName(ev.target.value)} />
+          <h2 className="text-2xl mt-4">Last Name </h2>
+          <input type="text"
+                 placeholder="Doe"
+                 value={lastName}
+                 onChange={ev => setLastName(ev.target.value)} />
+          <h2 className="text-2xl mt-4">Phone Number</h2>
+          <input type="text"
+                 placeholder="312000000"
+                 value={phoneNumber}
+                 onChange={ev => setPhoneNumber(ev.target.value)} />
+          <h2 className="text-2xl mt-4">Email</h2>
           <input type="email"
                  placeholder="your@email.com"
                  value={email}
                  onChange={ev => setEmail(ev.target.value)} />
+          <h2 className="text-2xl mt-4">Password</h2>
           <input type="password"
                  placeholder="password"
                  value={password}

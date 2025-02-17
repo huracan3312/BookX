@@ -100,13 +100,13 @@ export default function BookingWidget({ place }) {
   };
 
   return (
-    <div className="bg-white shadow p-4 rounded-2xl">
+    <div className="widget bg-white shadow p-4 rounded-2xl">
       <div className="text-2xl text-center">
         Price: ${place.price} / per night
       </div>
       <div className="border rounded-2xl mt-4">
         <div className="flex">
-          <div className="py-3 px-4 flex-1 min-w-[300px]">
+          <div className="py-3 px-4 flex-1 min-w-[200px]">
             <label>Check in:</label>
             <DatePicker
               selected={checkIn}
@@ -114,7 +114,7 @@ export default function BookingWidget({ place }) {
                 const [start, end] = dates;
                 setCheckIn(start);
                 setCheckOut(end);
-                //  setShowGuestInput(!!start && !!end); // Muestra el campo si hay fechas seleccionadas
+                setShowGuestInput(!!start && !!end); // Muestra el campo si hay fechas seleccionadas
               }}
               startDate={checkIn}
               endDate={checkOut}
@@ -125,13 +125,13 @@ export default function BookingWidget({ place }) {
               filterDate={(date) => !isDateBlocked(date)}
             />
           </div>
-          <div className="py-3 px-4 flex-1 min-w-[300px]">
+          <div className="py-3 px-4 flex-1 min-w-[200px]">
             <label>Check out:</label>
             <DatePicker
               selected={checkOut}
               onChange={(date) => {
                 setCheckOut(date);
-                //  setShowGuestInput(!!checkIn && !!date); // Muestra el campo si hay fechas seleccionadas
+                setShowGuestInput(!!checkIn && !!date); // Muestra el campo si hay fechas seleccionadas
               }}
               startDate={checkIn}
               endDate={checkOut}
@@ -151,6 +151,18 @@ export default function BookingWidget({ place }) {
               value={numberOfGuests}
               onChange={(ev) => setNumberOfGuests(ev.target.value)}
             />
+            <label>Your full name:</label>
+            <input
+              type="text"
+              value={name}
+              onChange={ev => setName(ev.target.value)}
+            />
+            <label>Phone number:</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={ev => setPhone(ev.target.value)}
+              />
           </div>
         )}
       </div>
