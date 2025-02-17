@@ -114,7 +114,7 @@ export default function BookingWidget({ place }) {
                 const [start, end] = dates;
                 setCheckIn(start);
                 setCheckOut(end);
-                //  setShowGuestInput(!!start && !!end); // Muestra el campo si hay fechas seleccionadas
+                setShowGuestInput(!!start && !!end); // Muestra el campo si hay fechas seleccionadas
               }}
               startDate={checkIn}
               endDate={checkOut}
@@ -131,7 +131,7 @@ export default function BookingWidget({ place }) {
               selected={checkOut}
               onChange={(date) => {
                 setCheckOut(date);
-                //  setShowGuestInput(!!checkIn && !!date); // Muestra el campo si hay fechas seleccionadas
+                setShowGuestInput(!!checkIn && !!date); // Muestra el campo si hay fechas seleccionadas
               }}
               startDate={checkIn}
               endDate={checkOut}
@@ -151,6 +151,18 @@ export default function BookingWidget({ place }) {
               value={numberOfGuests}
               onChange={(ev) => setNumberOfGuests(ev.target.value)}
             />
+            <label>Your full name:</label>
+            <input
+              type="text"
+              value={name}
+              onChange={ev => setName(ev.target.value)}
+            />
+            <label>Phone number:</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={ev => setPhone(ev.target.value)}
+              />
           </div>
         )}
       </div>

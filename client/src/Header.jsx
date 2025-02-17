@@ -1,17 +1,35 @@
 import { Link } from "react-router-dom";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect, useRef } from "react";
 import { UserContext } from "./UserContext.jsx";
 
 export default function Header() {
   const { user } = useContext(UserContext);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+  const buttonRef = useRef(null);
   const toggleMenu = () => {
-    setMenuOpen(!menuOpen);
+    setMenuOpen((prev) => !prev);
   };
   const closeMenu = () => {
     setMenuOpen(false);
   };
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target)
+      ) {
+        closeMenu();
+      }
+    }
 
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   return (
     <header className="flex justify-between relative">
       <Link to={"/"} className="flex items-center gap-1">
@@ -58,6 +76,7 @@ export default function Header() {
       {/* Contenedor del icono de hamburguesa y el menú */}
       <div className="relative">
         <button
+          ref={buttonRef}
           onClick={() => setMenuOpen(!menuOpen)}
           className="flex items-center gap-2 border border-gray-300 rounded-full py-2 px-4 bg-white"
         >
@@ -93,7 +112,7 @@ export default function Header() {
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 mt-2 w-60 bg-white border border-gray-300 rounded-lg shadow-lg" onClick={closeMenu}>
+          <div ref={menuRef} className="absolute z-50 right-0 mt-2 w-60 bg-white border border-gray-300 rounded-lg shadow-lg" onClick={closeMenu}>
             <ul className="flex flex-col">
               <li>
                 <Link

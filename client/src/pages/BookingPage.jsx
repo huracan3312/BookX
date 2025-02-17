@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import AddressLink from "../AddressLink";
 import PlaceGallery from "../PlaceGallery";
-import BookingDates from "../BookingDates";
+import BookingDates from "../components/Booking/BookingDates";
 import { Navigate } from "react-router-dom";
 
 export default function BookingPage() {
