@@ -1,7 +1,9 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import axios from "axios";
-import BookingWidget from "../BookingWidget";
+import BookingWidget from "../components/Booking/BookingWidget";
 import PlaceGallery from "../PlaceGallery";
 import AddressLink from "../AddressLink";
 
@@ -19,7 +21,7 @@ export default function PlacePage() {
     if (!id) {
       return;
     }
-    axios.get(`/places/${id}`).then(response => {
+    axios.get(`/places/${id}`).then((response) => {
       setPlace(response.data);
     });
     axios.get('/perks').then(response => {
@@ -68,7 +70,9 @@ export default function PlacePage() {
         <div>
           <h2 className="font-semibold text-2xl">Extra info</h2>
         </div>
-        <div className="mb-4 mt-2 text-sm text-gray-700 leading-5">{place.extraInfo}</div>
+        <div className="mb-4 mt-2 text-sm text-gray-700 leading-5">
+          {place.extraInfo}
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,10 @@
 {
+  "name": "api",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.279.0",
     "aws-sdk": "^2.1677.0",
