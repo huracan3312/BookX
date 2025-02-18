@@ -20,7 +20,7 @@ button.primary{
 }
 
 button.secondary{
-    @apply bg-white p-2 w-full text-primary rounded-2xl border-primary;
+    @apply bg-white p-2 w-full text-primary rounded-2xl border-primary border;
 }
 
 .form-input {

@@ -240,7 +240,7 @@ export default function PlaceDetails() {
         />
         <button
           type="submit"
-          className="mt-4 bg-primary text-white py-2 px-4 rounded-lg"
+          className="primary mt-5"
         >
           Save
         </button>
