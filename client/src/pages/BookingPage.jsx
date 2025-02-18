@@ -8,8 +8,8 @@ import { Navigate } from "react-router-dom";
 
 export default function BookingPage() {
   const [redirect, setRedirect] = useState('');
-  const {id} = useParams();
-  const [booking,setBooking] = useState(null);
+  const { id } = useParams();
+  const [booking, setBooking] = useState(null);
   useEffect(() => {
     if (id) {
       axios.get("/bookings").then((response) => {
@@ -36,11 +36,14 @@ export default function BookingPage() {
         alert('Cancellation failed. Please try again later');
       }
     } else {
-    }}
-    if (redirect) {
-      return <Navigate to={redirect} />;
     }
+  }
+  if (redirect) {
+    return <Navigate to={redirect} />;
+  }
+  async function modifyBooking(params) {
 
+  }
   return (
     <div className="my-8">
       <h1 className="text-3xl">{booking.place.title}</h1>
@@ -56,7 +59,14 @@ export default function BookingPage() {
         </div>
       </div>
       <PlaceGallery place={booking.place} />
-      <button className="primary my-4 w-full" onClick={cancelBooking}>Cancel Booking</button>
+      <div className="flex gap-4">
+        <button className="primary my-4 flex-1" onClick={cancelBooking}>
+          Cancel Booking
+        </button>
+        <button className="secondary my-4 flex-1" onClick={modifyBooking}>
+          Modify Booking
+        </button>
+      </div>
     </div>
   );
 }
