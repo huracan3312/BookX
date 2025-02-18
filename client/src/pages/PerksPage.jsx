@@ -47,7 +47,7 @@ export default function PerksPage() {
                 <h2 className="text-2xl mt-4">Description</h2>
                 <input type="text"
                     required
-                    placeholder="Wifi de 10mb"
+                    placeholder="Wifi of 100mb"
                     onChange={ev => setDescription(ev.target.value)} />
                 <h2 className="text-2xl mt-4">Category</h2>
                 <input type="text"

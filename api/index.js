@@ -267,41 +267,59 @@ app.get("/api/places/:id", async (req, res) => {
 });
 
 app.put("/api/places", async (req, res) => {
-  mongoose.connect(process.env.MONGO_URL);
-  const { token } = req.cookies;
-  const {
-    id,
-    title,
-    address,
-    addedPhotos,
-    description,
-    perks,
-    extraInfo,
-    checkIn,
-    checkOut,
-    maxGuests,
-    price,
-  } = req.body;
-  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
-    if (err) throw err;
-    const placeDoc = await Place.findById(id);
-    if (userData.id === placeDoc.owner.toString()) {
+  try {
+    await mongoose.connect(process.env.MONGO_URL);
+
+    const { token } = req.cookies;
+    const {
+      id,
+      title,
+      address,
+      addedPhotos,
+      description,
+      perks,
+      extraInfo,
+      checkIn,
+      checkOut,
+      maxGuests,
+      price,
+    } = req.body;
+
+    jwt.verify(token, jwtSecret, {}, async (err, userData) => {
+      if (err) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const placeDoc = await Place.findById(id);
+      if (!placeDoc) {
+        return res.status(404).json({ error: "Place not found" });
+      }
+
+      if (userData.id !== placeDoc.owner.toString()) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      // Reemplaza completamente los perks
       placeDoc.set({
         title,
         address,
         photos: addedPhotos,
         description,
-        perks,
+        perks, // Se reemplaza totalmente
         extraInfo,
         checkIn,
         checkOut,
         maxGuests,
         price,
       });
+
       await placeDoc.save();
-      res.json("ok");
-    }
-  });
+      res.json({ message: "Place updated successfully" });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 app.get('/api/places', async (req, res) => {
@@ -449,6 +467,44 @@ app.delete('/api/bookings/:id', async (req, res) => {
     res.status(500).json({ message: "An error occurred", error: err.message });
   }
 });
+
+app.put('/api/bookings/:id', async (req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  const { id } = req.params;
+  const { place, checkIn, checkOut, guests, price, phone, name } = req.body;
+
+  try {
+    const userData = await getUserDataFromReq(req);
+
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    // Verificar que el usuario sea el propietario de la reserva
+    if (booking.user.toString() !== userData.id) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    // Actualizar solo los campos proporcionados
+    booking.set({
+      ...(place && { place: mongoose.Types.ObjectId(place) }),
+      ...(checkIn && { checkIn: new Date(checkIn) }),
+      ...(checkOut && { checkOut: new Date(checkOut) }),
+      ...(guests !== undefined && { guests }),
+      ...(price !== undefined && { price }),
+      ...(phone !== undefined && { phone }),
+      ...(name !== undefined && { name }),
+    });
+
+    await booking.save();
+
+    res.json({ message: "Booking updated successfully", booking });
+  } catch (error) {
+    res.status(500).json({ message: "An error occurred", error: error.message });
+  }
+});
+
 
 app.get('/api/perks', async (req,res) => {
   mongoose.connect(process.env.MONGO_URL);
